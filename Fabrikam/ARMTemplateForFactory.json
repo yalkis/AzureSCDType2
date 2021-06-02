@@ -1,0 +1,515 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "Fabrikam"
+		},
+		"AzureBlobStorageConnection_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorageConnection'"
+		},
+		"sqldatabase100c_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'sqldatabase100c'"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_scd2')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "df_scd_type_2",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "df_scd_2",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"csv": {},
+									"sql": {},
+									"SqlSink": {},
+									"SqlSink2": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-05-31T14:53:14Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/df_scd_2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_scd_2_wLookup')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "SCD 2 with Lookup",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow1",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"InputCSV": {},
+									"InputSQL": {},
+									"InsertSqlTable": {},
+									"UpdateSqlTable": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-05-31T19:46:12Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/dataflow1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/csv')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorageConnection",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "employee.csv",
+						"container": "airbnbdata"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "id",
+						"type": "String"
+					},
+					{
+						"name": "name",
+						"type": "String"
+					},
+					{
+						"name": "dept",
+						"type": "String"
+					},
+					{
+						"name": "startdate",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorageConnection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_AzSql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "sqldatabase100c",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "id",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "name",
+						"type": "varchar"
+					},
+					{
+						"name": "dept",
+						"type": "varchar"
+					},
+					{
+						"name": "isActive",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "startdate",
+						"type": "date"
+					},
+					{
+						"name": "enddate",
+						"type": "date"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "t_dim_employee"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/sqldatabase100c')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dummy')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorageConnection",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "EmployeeFiles.csv",
+						"container": "scd2"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorageConnection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/sk_dim_player')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "sqldatabase100c",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "surrKey",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "dimid",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "name",
+						"type": "varchar"
+					},
+					{
+						"name": "age",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "homecountry",
+						"type": "varchar"
+					},
+					{
+						"name": "iplteam",
+						"type": "varchar"
+					},
+					{
+						"name": "lastmodified",
+						"type": "date"
+					},
+					{
+						"name": "hashcolumn",
+						"type": "binary"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "t_dim_players"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/sqldatabase100c')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/src_dim_player')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorageConnection",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "EmployeeFiles.csv",
+						"container": "scd2"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "dimid",
+						"type": "String"
+					},
+					{
+						"name": "name",
+						"type": "String"
+					},
+					{
+						"name": "age",
+						"type": "String"
+					},
+					{
+						"name": "homecountry",
+						"type": "String"
+					},
+					{
+						"name": "iplteam",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorageConnection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureBlobStorageConnection')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureBlobStorageConnection_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/sqldatabase100c')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('sqldatabase100c_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "src_dim_player",
+								"type": "DatasetReference"
+							},
+							"name": "InputCSV"
+						},
+						{
+							"dataset": {
+								"referenceName": "sk_dim_player",
+								"type": "DatasetReference"
+							},
+							"name": "InputSQL"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "sk_dim_player",
+								"type": "DatasetReference"
+							},
+							"name": "InsertSqlTable"
+						},
+						{
+							"dataset": {
+								"referenceName": "sk_dim_player",
+								"type": "DatasetReference"
+							},
+							"name": "UpdateSqlTable"
+						}
+					],
+					"transformations": [
+						{
+							"name": "CSVHash"
+						},
+						{
+							"name": "Lookup1"
+						},
+						{
+							"name": "NewRecord"
+						},
+						{
+							"name": "AlterRowToEnableUpdates"
+						}
+					],
+					"script": "source(output(\n\t\tdimid as integer,\n\t\tname as string,\n\t\tage as integer,\n\t\thomecountry as string,\n\t\tiplteam as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> InputCSV\nsource(output(\n\t\tsurrKey as integer,\n\t\tdimid as integer,\n\t\tname as string,\n\t\tage as integer,\n\t\thomecountry as string,\n\t\tiplteam as string,\n\t\tlastmodified as date,\n\t\thashcolumn as binary\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> InputSQL\nInputCSV derive(datemodified = currentDate()) ~> CSVHash\nCSVHash, InputSQL lookup(InputCSV@dimid == InputSQL@dimid,\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> Lookup1\nLookup1 split(isNull(InputSQL@dimid),\n\t!isNull(InputSQL@dimid) && notEquals(InputCSV@iplteam, InputSQL@iplteam),\n\tdisjoint: false) ~> NewRecord@(NewRecord, Update, Noupdate)\nNewRecord@Update alterRow(updateIf(true())) ~> AlterRowToEnableUpdates\nNewRecord@NewRecord sink(input(\n\t\tsurrKey as integer,\n\t\tdimid as integer,\n\t\tname as string,\n\t\tage as integer,\n\t\thomecountry as string,\n\t\tiplteam as string,\n\t\tlastmodified as date,\n\t\thashcolumn as binary\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tmapColumn(\n\t\tdimid = NewRecord@NewRecord@dimid,\n\t\tname = NewRecord@NewRecord@name,\n\t\tage = NewRecord@NewRecord@age,\n\t\thomecountry = NewRecord@NewRecord@homecountry,\n\t\tiplteam = NewRecord@NewRecord@iplteam,\n\t\tlastmodified = datemodified\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> InsertSqlTable\nAlterRowToEnableUpdates sink(input(\n\t\tsurrKey as integer,\n\t\tdimid as integer,\n\t\tname as string,\n\t\tage as integer,\n\t\thomecountry as string,\n\t\tiplteam as string,\n\t\tlastmodified as date,\n\t\thashcolumn as binary\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:true,\n\tupsertable:false,\n\tkeys:['dimid'],\n\tskipKeyWrites:true,\n\tformat: 'table',\n\tmapColumn(\n\t\tdimid = NewRecord@Update@dimid,\n\t\tname = NewRecord@Update@name,\n\t\tage = NewRecord@Update@age,\n\t\thomecountry = NewRecord@Update@homecountry,\n\t\tiplteam = NewRecord@Update@iplteam,\n\t\tlastmodified\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> UpdateSqlTable"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/src_dim_player')]",
+				"[concat(variables('factoryId'), '/datasets/sk_dim_player')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/df_scd_2')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "csv",
+								"type": "DatasetReference"
+							},
+							"name": "csv"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_AzSql",
+								"type": "DatasetReference"
+							},
+							"name": "sql"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_AzSql",
+								"type": "DatasetReference"
+							},
+							"name": "SqlSink"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_AzSql",
+								"type": "DatasetReference"
+							},
+							"name": "SqlSink2"
+						}
+					],
+					"transformations": [
+						{
+							"name": "HashInput"
+						},
+						{
+							"name": "HashRef"
+						},
+						{
+							"name": "ExistsUpdateOrNew"
+						},
+						{
+							"name": "SetToActive"
+						},
+						{
+							"name": "ExistsObsolete"
+						},
+						{
+							"name": "SetToInactive"
+						},
+						{
+							"name": "AlterRow1"
+						}
+					],
+					"script": "source(output(\n\t\tid as string,\n\t\tname as string,\n\t\tdept as string,\n\t\tstartdate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> csv\nsource(output(\n\t\tid as integer,\n\t\tname as string,\n\t\tdept as string,\n\t\tisActive as integer,\n\t\tstartdate as date,\n\t\tenddate as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> sql\ncsv derive(inputhash = md5(name,dept),\n\t\tid = toInteger(id),\n\t\tstartdate = toDate(startdate, 'mm/dd/yyyy')) ~> HashInput\nsql derive(sqlhash = md5(name,dept)) ~> HashRef\nHashInput, HashRef exists(inputhash == sqlhash,\n\tnegate:true,\n\tbroadcast: 'auto')~> ExistsUpdateOrNew\nExistsUpdateOrNew derive(isActive = 1,\n\t\tenddate = toDate('9999-12-31')) ~> SetToActive\nHashRef, SetToActive exists(sql@id == HashInput@id\n\t&& sql@name == csv@name,\n\tnegate:false,\n\tbroadcast: 'auto')~> ExistsObsolete\nExistsObsolete derive(enddate = toDate(currentUTC()),\n\t\tisActive = 0) ~> SetToInactive\nSetToInactive alterRow(updateIf(true())) ~> AlterRow1\nSetToActive sink(input(\n\t\tid as integer,\n\t\tname as string,\n\t\tdept as string,\n\t\tisActive as integer,\n\t\tstartdate as date,\n\t\tenddate as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tmapColumn(\n\t\tid,\n\t\tname,\n\t\tdept,\n\t\tisActive,\n\t\tstartdate,\n\t\tenddate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> SqlSink\nAlterRow1 sink(input(\n\t\tid as integer,\n\t\tname as string,\n\t\tdept as string,\n\t\tisActive as integer,\n\t\tstartdate as date,\n\t\tenddate as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:false,\n\tupdateable:true,\n\tupsertable:false,\n\tkeys:['id','name','dept'],\n\tskipKeyWrites:true,\n\tformat: 'table',\n\tmapColumn(\n\t\tid,\n\t\tname,\n\t\tdept,\n\t\tisActive,\n\t\tenddate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> SqlSink2"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/csv')]",
+				"[concat(variables('factoryId'), '/datasets/ds_AzSql')]"
+			]
+		}
+	]
+}
