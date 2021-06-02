@@ -1,0 +1,53 @@
+{
+	"name": "sk_dim_player",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "sqldatabase100c",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "surrKey",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "dimid",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "name",
+				"type": "varchar"
+			},
+			{
+				"name": "age",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "homecountry",
+				"type": "varchar"
+			},
+			{
+				"name": "iplteam",
+				"type": "varchar"
+			},
+			{
+				"name": "lastmodified",
+				"type": "date"
+			},
+			{
+				"name": "hashcolumn",
+				"type": "binary"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "t_dim_players"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

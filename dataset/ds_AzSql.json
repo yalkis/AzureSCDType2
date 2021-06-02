@@ -1,0 +1,44 @@
+{
+	"name": "ds_AzSql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "sqldatabase100c",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "name",
+				"type": "varchar"
+			},
+			{
+				"name": "dept",
+				"type": "varchar"
+			},
+			{
+				"name": "isActive",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "startdate",
+				"type": "date"
+			},
+			{
+				"name": "enddate",
+				"type": "date"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "t_dim_employee"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

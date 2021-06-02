@@ -1,0 +1,64 @@
+{
+	"name": "df_scd_2",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "csv",
+						"type": "DatasetReference"
+					},
+					"name": "csv"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_AzSql",
+						"type": "DatasetReference"
+					},
+					"name": "sql"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_AzSql",
+						"type": "DatasetReference"
+					},
+					"name": "SqlSink"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_AzSql",
+						"type": "DatasetReference"
+					},
+					"name": "SqlSink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "HashInput"
+				},
+				{
+					"name": "HashRef"
+				},
+				{
+					"name": "ExistsUpdateOrNew"
+				},
+				{
+					"name": "SetToActive"
+				},
+				{
+					"name": "ExistsObsolete"
+				},
+				{
+					"name": "SetToInactive"
+				},
+				{
+					"name": "AlterRow1"
+				}
+			],
+			"script": "source(output(\n\t\tid as string,\n\t\tname as string,\n\t\tdept as string,\n\t\tstartdate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> csv\nsource(output(\n\t\tid as integer,\n\t\tname as string,\n\t\tdept as string,\n\t\tisActive as integer,\n\t\tstartdate as date,\n\t\tenddate as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> sql\ncsv derive(inputhash = md5(name,dept),\n\t\tid = toInteger(id),\n\t\tstartdate = toDate(startdate, 'mm/dd/yyyy')) ~> HashInput\nsql derive(sqlhash = md5(name,dept)) ~> HashRef\nHashInput, HashRef exists(inputhash == sqlhash,\n\tnegate:true,\n\tbroadcast: 'auto')~> ExistsUpdateOrNew\nExistsUpdateOrNew derive(isActive = 1,\n\t\tenddate = toDate('9999-12-31')) ~> SetToActive\nHashRef, SetToActive exists(sql@id == HashInput@id\n\t&& sql@name == csv@name,\n\tnegate:false,\n\tbroadcast: 'auto')~> ExistsObsolete\nExistsObsolete derive(enddate = toDate(currentUTC()),\n\t\tisActive = 0) ~> SetToInactive\nSetToInactive alterRow(updateIf(true())) ~> AlterRow1\nSetToActive sink(input(\n\t\tid as integer,\n\t\tname as string,\n\t\tdept as string,\n\t\tisActive as integer,\n\t\tstartdate as date,\n\t\tenddate as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tmapColumn(\n\t\tid,\n\t\tname,\n\t\tdept,\n\t\tisActive,\n\t\tstartdate,\n\t\tenddate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> SqlSink\nAlterRow1 sink(input(\n\t\tid as integer,\n\t\tname as string,\n\t\tdept as string,\n\t\tisActive as integer,\n\t\tstartdate as date,\n\t\tenddate as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:false,\n\tupdateable:true,\n\tupsertable:false,\n\tkeys:['id','name','dept'],\n\tskipKeyWrites:true,\n\tformat: 'table',\n\tmapColumn(\n\t\tid,\n\t\tname,\n\t\tdept,\n\t\tisActive,\n\t\tenddate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> SqlSink2"
+		}
+	}
+}

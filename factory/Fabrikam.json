@@ -1,0 +1,9 @@
+{
+	"name": "Fabrikam",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "b2aed2eb-9999-4694-b94c-e94fc42a5106",
+		"tenantId": "af7065d9-e941-4525-b66c-96c036061dd1"
+	}
+}
